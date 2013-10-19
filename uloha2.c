@@ -77,8 +77,6 @@ int main(int argc, char *argv[]) {
 
   // Init
   MPI_Init(&argc, &argv);
-
-  // Get number of nodes
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -86,7 +84,6 @@ int main(int argc, char *argv[]) {
     printf("Su potrebne prave 3 procesy\n");
     return 0;
   }
-
 
   if(rows % 2 != 0) {
     printf("Matica musi mat parny pocet riadkov\n");
@@ -117,18 +114,16 @@ int main(int argc, char *argv[]) {
     printMatrix(tRows, tColumns, tMatrix);
 
   } else {
-    // DAFUQ
-    // int subMatrix[rows / 2][columns];
-    int rows = 2;
-    int columns = 2;
-    int subMatrix[rows][columns];
-    MPI_Recv(subMatrix, rows * columns, MPI_INT, 0, tag, MPI_COMM_WORLD, &status);
+    int sRows = rows / 2;
+    int sColumns = 2;
+    int subMatrix[sRows][sColumns];
+    MPI_Recv(subMatrix, sRows * sColumns, MPI_INT, 0, tag, MPI_COMM_WORLD, &status);
 
     // Transpose matrix
-    int subTMatrix[columns][rows];
-    transposeMatrix(rows, columns, subMatrix, subTMatrix);
+    int subTMatrix[sColumns][sRows];
+    transposeMatrix(sRows, sColumns, subMatrix, subTMatrix);
 
-    MPI_Send(subTMatrix, columns * rows, MPI_INT, 0, tag, MPI_COMM_WORLD);
+    MPI_Send(subTMatrix, sRows * sColumns, MPI_INT, 0, tag, MPI_COMM_WORLD);
   }
 
   // Teardown

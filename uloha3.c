@@ -40,16 +40,15 @@ void multiplyMatrices(int aRows, int aColumns, int aM[aRows][aColumns], int bRow
 int main(int argc, char *argv[]) {
 	int size, rank;
 
-	const int aRows = 3;
-	const int aColumns = 3;
+	const int aRows = 8;
+	const int aColumns = 4;
 	int matrixA[aRows][aColumns];
 
-	const int bRows = 3;
-	const int bColumns = 3;
+	const int bRows = 4;
+	const int bColumns = 4;
 	int matrixB[bRows][bColumns];
 
 	MPI_Init(&argc, &argv);
-
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -58,10 +57,16 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 
-	if(size != aRows) {
-		printf("Pocet procesov musi byt rovny poctu riadkov prvej matice!\n");
+	if(aRows > aRows) {
+		printf("Pocet procesov musi byt maxmalne rovny poctu riadkov\n");
+		return 0;
 	}
 
+	if(aRows % size != 0) {
+		printf("Pocet riadkov matice musi byt delitelny poctom procesov\n");
+	}
+
+	// Root generates the matrices
 	if(rank == 0) {
 		srand(time(NULL));
 
@@ -77,15 +82,16 @@ int main(int argc, char *argv[]) {
 
 	}
 
-	const int smRows = 1;
+	// const int smRows = 1;
+	const int smRows = aRows / size;
 	const int smColumns = aColumns;
 	int sMatrix[smRows][smColumns];
 
 	// Scatter matrix A by rows
 	// so everyone gets one row
 	MPI_Scatter(
-		matrixA, smColumns, MPI_INT,
-		sMatrix, smColumns, MPI_INT,
+		matrixA, smColumns * smRows, MPI_INT,
+		sMatrix, smColumns * smRows, MPI_INT,
 		0, MPI_COMM_WORLD
 		);
 
@@ -110,7 +116,7 @@ int main(int argc, char *argv[]) {
 	// Pozor, tu count je pocet prijatych
 	// elementov na proces, nie vsetkych spolu
 	// Gather multiplied rows from everyone
-	// aj join them into final multiplied matrix
+	// and join them into final multiplied matrix
 	MPI_Gather(
 		mMatrix, mRows * mColumns, MPI_INT,
 		resultMatrix, mRows * mColumns, MPI_INT,

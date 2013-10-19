@@ -17,20 +17,25 @@ int findMaximum(int *buffer, int bufferSize) {
 }
 
 int main(int argc, char *argv[]) {
+  int rank;
+  int worldSize;
 
   // Init
   MPI_Init(&argc, &argv);
-  int worldRank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &worldRank);
-  int worldSize;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &worldSize);
+
+  if(BUFFER_SIZE % size != 0) {
+    printf("Velkost buffra musi byt delitelna poctom procesov\n");
+    return 0;
+  }
 
   // Create buffer
   int buffer[BUFFER_SIZE];
-  if(worldRank == ROOT) {
+  if(rank == ROOT) {
     // Root fills the buffer
-    buffer[0]=5; buffer[1]=1; buffer[2]=99; buffer[3]=7; buffer[4]=6; 
-    buffer[5]=5; buffer[6]=4; buffer[7]=2; buffer[8]=3; buffer[9]=1;
+    buffer[0]=5; buffer[1]=1; buffer[2]=9; buffer[3]=7; buffer[4]=6; 
+    buffer[5]=5; buffer[6]=4; buffer[7]=28; buffer[8]=3; buffer[9]=1;
   }
 
   // Create sub-buffer
@@ -44,14 +49,12 @@ int main(int argc, char *argv[]) {
     ROOT, MPI_COMM_WORLD
     );
 
-
-  // Toto ked zavolam s rozmerom "worldSize" tak to mrdne
-  //int subMaximums[worldSize];
-  int subMaximums[2];
-  int subMaximum = findMaximum(subBuffer, subBufferSize);
-  // printf("SubMaximum: %d", subMaximum);
-
   //
+  int subMaximums[worldSize];
+  int subMaximum = findMaximum(subBuffer, subBufferSize);
+
+  // -- Pozor, tu count je pocet prijatych
+  // elementov na proces, nie vsetkych spolu
   MPI_Gather(
     &subMaximum, 1, MPI_INT,
     subMaximums, 1, MPI_INT,
@@ -60,13 +63,12 @@ int main(int argc, char *argv[]) {
 
   // Root receives all the submaximums
   // and finds maximum of those
-  if(worldRank == ROOT) {
+  if(rank == ROOT) {
     int totalMax = findMaximum(subMaximums, worldSize);
     printf("Maximum je: %d", totalMax);
   }
 
   // Clean up
-  // MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
   return 0;
 }
