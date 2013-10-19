@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 	const int rColumns = bColumns;
 	int resultMatrix[rRows][rColumns];
 
-	// Pozor, tu count je pocet prijatych
+	// -- Pozor, tu count je pocet prijatych
 	// elementov na proces, nie vsetkych spolu
 	// Gather multiplied rows from everyone
 	// and join them into final multiplied matrix
