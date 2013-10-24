@@ -50,11 +50,19 @@ int main(int argc, char *argv[]) {
     strcpy(table[6], "wtf");
     strcpy(table[7], "meh"); */
 
-    sendCounts[0] = 2;
-    sendCounts[1] = 2;
+    sendCounts[0] = 5;
+    sendCounts[1] = 5;
+    sendCounts[2] = 9;
+    sendCounts[3] = 13;
 
+    /* displacements[0] = MAX_STRING_LENGTH;
+    displacements[1] = MAX_STRING_LENGTH * 2;
+    displacements[2] = MAX_STRING_LENGTH * 3;
+    displacements[3] = MAX_STRING_LENGTH * 4; */
     displacements[0] = 0;
-    displacements[1] = 2;
+    displacements[1] = MAX_STRING_LENGTH * 1;
+    displacements[2] = MAX_STRING_LENGTH * 2;
+    displacements[3] = MAX_STRING_LENGTH * 3;
 
     /* int i;
     int sum = 0;
@@ -76,8 +84,7 @@ int main(int argc, char *argv[]) {
   // MPI_Bcast(stringLengths, TABLE_SIZE, MPI_INT, ROOT, MPI_COMM_WORLD);
   // MPI_Bcast(displacements, TABLE_SIZE, MPI_INT, ROOT, MPI_COMM_WORLD);
 
-  // int subTableSize = TABLE_SIZE / size;
-  int subTableSize = 2;
+  int subTableSize = TABLE_SIZE / size;
   char subTable[subTableSize][MAX_STRING_LENGTH];
 
   //
@@ -88,18 +95,23 @@ int main(int argc, char *argv[]) {
     subTable, sendCounts[rank], MPI_CHAR,
     ROOT, MPI_COMM_WORLD
     ); */
-  MPI_Scatterv(
+  /* MPI_Scatterv(
     table, sendCounts, displacements, MPI_CHAR,
-    subTable, 2, MPI_CHAR,
+    subTable, MAX_STRING_LENGTH, MPI_CHAR,
     ROOT, MPI_COMM_WORLD
-    );
+    ); */
+    /* MPI_Scatter(
+      table, MAX_STRING_LENGTH, MPI_CHAR,
+      subTable, MAX_STRING_LENGTH, MPI_CHAR,
+      ROOT, MPI_COMM_WORLD
+      ); */
 
-  if(rank == 1) {
+  // if(rank == 0) {
     int i;
     for(i = 0; i < subTableSize; i++) {
-      printf("%s ", subTable[i]);
+      printf("%s-", subTable[i]);
     }
-  }
+  // }
 
   /* int match = findMatch(subTableSize, MAX_STRING_LENGTH, subTable, keyword);
   // printf("%d", match);
