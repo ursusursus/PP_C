@@ -60,40 +60,33 @@ int main(int argc, char *argv[]) {
   int subMatches[subMatchesSize];
   findMatches(subTableStrings, MAX_STRING_LENGTH, subTable, keyword, subMatches);
 
-  /* int i;
-  for(i = 0; i < subMatchesSize; i++) {
-    printf("%d@", subMatches[i]);
-  } */
-
   int matchesSize = size;
-  // int matches[matchesSize];
+  int matches[matchesSize];
 
   // JEBE
   // int pica[2];
   // END JEBE
 
-  if(rank == 0) {
-    printf("SubmatchesSize: %d - MatchesSize: %d", subMatchesSize, matchesSize);
-  }
-
-  /* MPI_Gather(
+  MPI_Gather(
     subMatches, subMatchesSize, MPI_INT,
     matches, subMatchesSize, MPI_INT,
     0, MPI_COMM_WORLD
     );
 
-  int matchesCount = 0;
-  int i;
-  for(i = 0; i < matchesSize; i++) {
-    if(matches[i] != -1) {
-      printf("Matche found at: %d", (i * subMatchesSize) + matches[i]);
-      matchesCount ++;
+  if(rank == 0) {
+    int matchesCount = 0;
+    int i;
+    for(i = 0; i < matchesSize; i++) {
+      if(matches[i] != -1) {
+        printf("Match found at: %d'\n", (i * subMatchesSize) + matches[i]);
+        matchesCount++;
+      }
+    }
+
+    if(matchesCount <= 0) {
+      printf("No matches found!'\n");
     }
   }
-
-  if(matchesCount <= 0) {
-    printf("No matches found!");
-  } */
 
   // Teardown
   MPI_Finalize();
