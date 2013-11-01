@@ -31,9 +31,12 @@ int main(int argc, char *argv[]) {
 
   int sendCounts[size];
   int displacements[size];
+  int charSendCounts[size];
+  int charDisplacements[size];
 
+  //
   if(rank == ROOT) {
-    strcpy(keyword, "paralelne");
+    strcpy(keyword, "wtf");
 
     strcpy(table[0], "hello");
     strcpy(table[1], "world");
@@ -44,76 +47,72 @@ int main(int argc, char *argv[]) {
     strcpy(table[6], "wtf");
     strcpy(table[7], "meh");
 
-    /* int stringPerProcess = TABLE_SIZE / size;
+    int stringsPerProcess = TABLE_SIZE / size;
+    int remainder = TABLE_SIZE % size;
 
+    // Vypocitat sendCounty a displacementy
     int i;
     int sum = 0;
     for(i = 0; i < size; i++) {
-      int sendCount = MAX_STRING_LENGTH * stringPerProcess;
+      int sendCount = stringsPerProcess;
+      // Upravit pocet pre nedelitelne veci
+      if(remainder > 0) {
+        sendCount++;
+        remainder--;
+      }
+
       sendCounts[i] = sendCount;
+      charSendCounts[i] = sendCount * MAX_STRING_LENGTH;;
+
       displacements[i] = sum;
+      charDisplacements[i] = sum * MAX_STRING_LENGTH;
+
       sum += sendCount;
-    } */
-
-    /* int j;
-    for(j = 0; j < size; j++) {
-      printf("S[%d]:%d - D[%d]:%d\n", j, sendCounts[j], j, displacements[j]);
-    } */
+    }
 
   }
-  int stringPerProcess = TABLE_SIZE / size;
-
-  int i;
-  int sum = 0;
-  for(i = 0; i < size; i++) {
-    int sendCount = MAX_STRING_LENGTH * stringPerProcess;
-    sendCounts[i] = sendCount;
-    displacements[i] = sum;
-    sum += sendCount;
-  }
 
 
-  // Okay
-  int subTableSize = sendCounts[rank] / MAX_STRING_LENGTH;
+  int subTableSize;
+
+  // Rozscatterovat velkost poli
+  MPI_Scatter(
+    sendCounts, 1, MPI_INT,
+    &subTableSize, 1, MPI_INT,
+    ROOT, MPI_COMM_WORLD
+    );
+
+  printf("SubTableSize: %d", subTableSize);
+
   char subTable[subTableSize][MAX_STRING_LENGTH];
 
-  int subSendCounts[subTableSize];
-  subSendCounts[0] = 4;
-  subSendCounts[1] = 4;
-
-  int subDisplacements[subTableSize];
-  subDisplacements[0] = 0;
-  subDisplacements[1] = 4;
-
-
+  // Rozscatterovat stringy
   MPI_Scatterv(
-    table, sendCounts, displacements, MPI_CHAR,
-    subTable, sendCounts[rank], MPI_CHAR,
+    table, charSendCounts, charDisplacements, MPI_CHAR,
+    subTable, charSendCounts[rank], MPI_CHAR,
     ROOT, MPI_COMM_WORLD
   );
 
+  // Broadcastnut keyword
   MPI_Bcast(keyword, MAX_STRING_LENGTH, MPI_CHAR, ROOT, MPI_COMM_WORLD);
 
- 
+  // Vyhladat matche
   int subMatchesSize = subTableSize;
   int subMatches[subMatchesSize];
   findMatches(subTableSize, MAX_STRING_LENGTH, subTable, keyword, subMatches);
 
-  /* int j;
-  for(j = 0; j < subMatchesSize; j++) {
-    printf("%d@", subMatches[j]);
-  } */
-
   int matchesSize = TABLE_SIZE;
   int matches[matchesSize];
 
+  // Gathernut matche na root
   MPI_Gatherv(
     subMatches, subMatchesSize, MPI_INT,
-    matches, subSendCounts, subDisplacements, MPI_INT,
+    matches, sendCounts, displacements, MPI_INT,
     ROOT, MPI_COMM_WORLD
     );
 
-  // Zaver
+  // Na roote
+  // vypocitat spravny index
   if(rank == 0) {
     int matchesCount = 0;
     int i;
