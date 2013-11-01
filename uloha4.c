@@ -34,6 +34,12 @@ int main(int argc, char *argv[]) {
   int charSendCounts[size];
   int charDisplacements[size];
 
+  // Obmedzenie
+  if(size > TABLE_SIZE) {
+    printf("Prilis vela procesov");
+    return 0;
+  }
+
   //
   if(rank == ROOT) {
     strcpy(keyword, "wtf");

@@ -96,7 +96,10 @@ int main (int argc, char ** argv) {
 
     pocetSlovNaProces = rank < zvysok ? pocetSlovNaProces+1:pocetSlovNaProces;
     dataPreProces = malloc(sizeof * dataPreProces * pocetSlovNaProces);
-    MPI_Scatterv(osoby, sendcounts, offsets, person, dataPreProces, pocetSlovNaProces, person, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(
+        osoby, sendcounts, offsets, person,
+        dataPreProces, pocetSlovNaProces, person,
+        0, MPI_COMM_WORLD);
 
     retbuf = (int*) malloc(pocetSlovNaProces*sizeof(int));
 

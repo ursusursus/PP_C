@@ -35,12 +35,11 @@ int main(int argc, char *argv[]) {
   int charSendCounts[size];
   int charDisplacements[size];
 
-  /**
-  *
-  * Obmedzenie ze pocet stringov musi byt delitelne poctom procesov
-  * inac treba pouzit scatterv, ktory mi zatial nejde
-  *
-  */
+  // Obmedzenie
+  if(size > MAX_STRING_COUNT) {
+    printf("Prilis vela procesov");
+    return 0;
+  }
 
   if(rank == 0) {
     strcpy(strings[0], "hello");
@@ -70,9 +69,13 @@ int main(int argc, char *argv[]) {
 
       sum += sendCount;
     }
+
+    /* int j;
+    for(j = 0; j < size; j++) {
+      printf("S[%d]: %d - D[%d]: %d\n", j, sendCounts[j], j, displacements[j]);
+    } */
   }
 
-  // int subStringsCount = MAX_STRING_COUNT / size;
   int subStringsCount;
 
   // Rozscatterovat velkost poli
@@ -82,20 +85,15 @@ int main(int argc, char *argv[]) {
     0, MPI_COMM_WORLD
     );
 
+
   char subStrings[subStringsCount][MAX_STRING_LENGTH];
 
   // Rozscatterovat stringy
-  /* MPI_Scatter(
-    strings, subStringsCount * MAX_STRING_LENGTH, MPI_CHAR,
-    subStrings, subStringsCount * MAX_STRING_LENGTH, MPI_CHAR,
-    0, MPI_COMM_WORLD
-    ); */
   MPI_Scatterv(
     strings, charSendCounts, charDisplacements, MPI_CHAR,
     subStrings, charSendCounts[rank], MPI_CHAR,
     0, MPI_COMM_WORLD
   );
-
 
   // Vypocitat hashe zo stringov
   int subHashesCount = subStringsCount;
@@ -106,12 +104,12 @@ int main(int argc, char *argv[]) {
   }
 
   int hashesCount = MAX_STRING_COUNT;
-  int hashes[hashesCount];
-
+  int hashes[hashesCount];  
+  
   // Gathernut vypocitane hashe
-  MPI_Gather(
+  MPI_Gatherv(
     subHashes, subHashesCount, MPI_INT,
-    hashes, subHashesCount, MPI_INT,
+    hashes, sendCounts, displacements, MPI_INT,
     0, MPI_COMM_WORLD
     );
 
