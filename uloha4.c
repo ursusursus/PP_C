@@ -10,9 +10,9 @@ int findMatches(int stringCount, int stringLength, char table[stringCount][strin
   int i;
   for(i = 0; i < stringCount; i++) {
     if(strcmp(keyword, table[i]) == 0) {
-      matches[i] = i;
+      matches[i] = 1;
     } else {
-      matches[i] = -1;
+      matches[i] = 0;
     }
   }
 }
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     strcpy(table[6], "wtf");
     strcpy(table[7], "meh");
 
-    int stringPerProcess = TABLE_SIZE / size;
+    /* int stringPerProcess = TABLE_SIZE / size;
 
     int i;
     int sum = 0;
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
       sendCounts[i] = sendCount;
       displacements[i] = sum;
       sum += sendCount;
-    }
+    } */
 
     /* int j;
     for(j = 0; j < size; j++) {
@@ -61,19 +61,30 @@ int main(int argc, char *argv[]) {
     } */
 
   }
+  int stringPerProcess = TABLE_SIZE / size;
+
+  int i;
+  int sum = 0;
+  for(i = 0; i < size; i++) {
+    int sendCount = MAX_STRING_LENGTH * stringPerProcess;
+    sendCounts[i] = sendCount;
+    displacements[i] = sum;
+    sum += sendCount;
+  }
 
 
-  int recvCount;
-  MPI_Scatter(
-      sendCounts, 1, MPI_INT,
-      &recvCount, 1, MPI_INT,
-      ROOT, MPI_COMM_WORLD
-    );
-
-  printf("RECVCOUNT:%d", recvCount / MAX_STRING_LENGTH);
-
-  int subTableSize = recvCount / MAX_STRING_LENGTH;
+  // Okay
+  int subTableSize = sendCounts[rank] / MAX_STRING_LENGTH;
   char subTable[subTableSize][MAX_STRING_LENGTH];
+
+  int subSendCounts[subTableSize];
+  subSendCounts[0] = 4;
+  subSendCounts[1] = 4;
+
+  int subDisplacements[subTableSize];
+  subDisplacements[0] = 0;
+  subDisplacements[1] = 4;
+
 
   MPI_Scatterv(
     table, sendCounts, displacements, MPI_CHAR,
@@ -81,38 +92,42 @@ int main(int argc, char *argv[]) {
     ROOT, MPI_COMM_WORLD
   );
 
-
-
   MPI_Bcast(keyword, MAX_STRING_LENGTH, MPI_CHAR, ROOT, MPI_COMM_WORLD);
- /*
+
+ 
   int subMatchesSize = subTableSize;
   int subMatches[subMatchesSize];
   findMatches(subTableSize, MAX_STRING_LENGTH, subTable, keyword, subMatches);
 
-  int i;
-  for(i = 0; i < subMatchesSize; i++) {
-    printf("%d@", subMatches[i]);
-  }
+  /* int j;
+  for(j = 0; j < subMatchesSize; j++) {
+    printf("%d@", subMatches[j]);
+  } */
 
-  /* int matchesSize = size;
+  int matchesSize = TABLE_SIZE;
   int matches[matchesSize];
 
   MPI_Gatherv(
     subMatches, subMatchesSize, MPI_INT,
-    matches, sendCounts, displacements, MPI_INT,
+    matches, subSendCounts, subDisplacements, MPI_INT,
     ROOT, MPI_COMM_WORLD
-    ); */
+    );
 
-
-
-  /* if(rank == 1) {
+  // Zaver
+  if(rank == 0) {
+    int matchesCount = 0;
     int i;
-    for(i = 0; i < subTableSize; i++) {
-      printf("%s-", subTable[i]);
+    for(i = 0; i < matchesSize; i++) {
+      if(matches[i] != 0) {
+        printf("Match found at: %d'\n", i);
+        matchesCount++;
+      }
     }
-  } */
 
-  
+    if(matchesCount <= 0) {
+      printf("No matches found!'\n");
+    }
+  }
 
   // Teardown
   MPI_Finalize();
